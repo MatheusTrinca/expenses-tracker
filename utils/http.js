@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL =
-  'https://react-native-course-f6dbc-default-rtdb.firebaseio.com';
+const BASE_URL = 'https://react-native-course-f6dbc-default-rtdb.firebaseio.co';
 
 const addExpense = async expenseData => {
   const response = await axios.post(BASE_URL + '/expenses.json', expenseData);
@@ -34,4 +33,12 @@ const fetchExpenses = async () => {
   return expenses;
 };
 
-export default { addExpense, fetchExpenses };
+const updateExpense = (id, expenseData) => {
+  return axios.put(BASE_URL + `/expenses/${id}.json`, expenseData);
+};
+
+const deleteExpense = id => {
+  return axios.delete(BASE_URL + `/expenses/${id}.json`);
+};
+
+export default { addExpense, fetchExpenses, updateExpense, deleteExpense };
