@@ -6,11 +6,13 @@ import { useExpensesContext } from '../contexts/expenses-context';
 import ExpenseForm from '../components/ManageExpense/ExpenseForm';
 import http from '../utils/http';
 import LoadingOverlay from '../components/UI/LoadingOverlay';
+import ErrorOverlay from '../components/UI/ErrorOverlay';
 
 const ManageExpenses = ({ route, navigation }) => {
   const editedExpenseId = route.params?.expenseId;
   const isEditing = !!editedExpenseId;
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState();
 
   const { deleteExpense, updateExpense, addExpense, expenses } =
     useExpensesContext();
@@ -26,10 +28,15 @@ const ManageExpenses = ({ route, navigation }) => {
   }, [navigation, isEditing]);
 
   async function deleteExpenseHandler() {
-    deleteExpense(editedExpenseId);
     setLoading(true);
-    await http.deleteExpense(editedExpenseId);
-    navigation.goBack();
+    try {
+      deleteExpense(editedExpenseId);
+      await http.deleteExpense(editedExpenseId);
+      navigation.goBack();
+    } catch (e) {
+      setError('Could not delete expense - Please try again later');
+      setLoading(false);
+    }
   }
 
   function cancelHandler() {
@@ -38,17 +45,30 @@ const ManageExpenses = ({ route, navigation }) => {
 
   async function confirmHandler(expenseData) {
     setLoading(true);
-    if (isEditing) {
-      updateExpense(editedExpenseId, expenseData);
-      await http.updateExpense(editedExpenseId, expenseData);
-    } else {
-      const id = await http.addExpense(expenseData);
-      addExpense({ ...expenseData, id });
+    try {
+      if (isEditing) {
+        updateExpense(editedExpenseId, expenseData);
+        await http.updateExpense(editedExpenseId, expenseData);
+      } else {
+        const id = await http.addExpense(expenseData);
+        addExpense({ ...expenseData, id });
+      }
+      navigation.goBack();
+    } catch (e) {
+      setError('Could not save data, please try again later');
+      setLoading(false);
     }
-    navigation.goBack();
+  }
+
+  function errorHandler() {
+    setError(null);
   }
 
   if (loading) return <LoadingOverlay />;
+
+  if (error && !loading) {
+    return <ErrorOverlay message={error} onConfirm={errorHandler} />;
+  }
 
   return (
     <View style={styles.container}>
